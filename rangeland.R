@@ -53,8 +53,11 @@ model = function(t, y, parms) {
     GdT = Gd * ( 1 - w2t ) # Density of grasses not near water scaled to total area
     GT = GwT + GdT # Total density of grass at scale of total area
     
-
-    dGw = Gw * ( rG * ( 1 - Gw / kG ))     - (aC * Gw / (bC + Gw)) * C / w2t    -  tB * aB * B    -  (aR * Gw / (bR + Gw)) * R
+    Gw_growth = Gw * ( rG * ( 1 - Gw / kG )) 
+    Gw_cattle_consumption =  (aC * Gw / (bC + Gw)) * C / w2t 
+    dGw =  Gw_growth  -  Gw_cattle_consumption -  tB * aB * B    -  (aR * Gw / (bR + Gw)) * R
+    
+    
     
     dGd = Gd * ( rG * ( 1 - Gd / kG ) )    - (1 - tB) * aB * B     -  (aR * Gw / (bR + Gw)) * R
     
@@ -62,8 +65,7 @@ model = function(t, y, parms) {
     
     dB  = (eB * aB / Bw) * B   - dhB * B
     
-    dR  = (eR * (aR * Gw / (bR + Gw)) / Rw) * R * (1 - R / kR)    - dnRI    - ( (aK * R) / (bK + R) ) * K 
-    dR = 0
+    dR  = (eR * (aR * Gw / (bR + Gw)) / Rw) * R * (1 - R / kR)    - dnR * R    - ( (aK * R) / (bK + R) ) * K 
     # evidence is that jackrabbits are not actually limited by food
     
     #dK  = eK * ( (aK * R) / (bK + R) ) * K  - dnK * K
@@ -82,16 +84,16 @@ params = c(
         Bw = 680, # avg weight of a bison
         Rw = 2, # avg weight of a rabbit
   
-        rG = 12592.5, # intrinsic (max) growth rate of grasses  kg / year / ha
+        rG = 2000, #6000, # intrinsic (max) growth rate of grasses  kg / year / ha
         kG = kG, # carrying capcity density of grasses  kg / ha
         
         w2t = .25, # amount of area that is 'near water,' i.e. grazable by cattle
         
         aC = 4080,  # ideal kilos of grass per year per cattle 
-        bC = kG / 4, # density of grasses at half maximum consumption, value is a rough guess
+        bC = kG / 100, # density of grasses at half maximum consumption, value is a rough guess
                      # consumption should saturate quickly
         eC = .1, # median conversion efficiency
-        dhC = .15, # cattle harvest rate, percentage
+        dhC = .5, # cattle harvest rate, percentage
         
         aB = 4080,  # ideal kilos of grass per year per mature bison 
         eB = .04,   #  bison biomass conversion efficiency
@@ -99,11 +101,11 @@ params = c(
         dhB = .012, # culling rate, allowing some growth, a percentage
         tB = .2,  # percentage time bison spend feeding near water, may be influenced by precipitation
         
-        eR = .1, # current research suggests that grass availability is not the limiting factor on jackrabbit density
+        eR = .4, # this is tuned to allow one rabbit to create 8 rabbits a year, a conservative estimate
         aR =  54.75, # kg forage pre year per rabbit
-        bR = kG / 4, # saturate forage rate quickly 
-        kR = 2,  # max jackrabbits per hectare
-        dnRI = 18.25, # density independent natural rabbit deaths - not including predation 
+        bR = kG / 100, # saturate forage rate quickly 
+        kR = 2.7,  # max jackrabbits per hectare
+        dnR = 0.05, # natural rabbit death rate - not including predation 
         
         aK = 10,
         bK = 10,
@@ -113,10 +115,10 @@ params = c(
 
 Gw0 = 600
 Gd0 = 1000
-C0 = 0 #15
+C0 = 10 #15
 B0 = 0 #2
-R0 = 0 #10
-K0 = 0 #40
+R0 = 0 #2.7 #10
+K0 = .4 #40
   
 state = c(
           Gw0,
@@ -135,12 +137,12 @@ t = 1:10
 out = ode(y = state, times = t, func = model, parms = params)
 
 par(mfrow=c(3,2))
-matplot(t, out[,2], type = "l", ylab = "Grass near water", xlab = 'months')
-matplot(t, out[,3], type = "l", ylab = "Grass not near water", xlab = 'months')
-matplot(t, out[,4], type = "l", ylab = "Cattle", xlab = 'months', ylim=c(0, max(out[,4])))
-matplot(t, out[,5], type = "l", ylab = "Bison", xlab = 'months', ylim=c(0, max(out[,5])))
-matplot(t, out[,6], type = "l", ylab = "Rabbits", xlab = 'months', ylim=c(0, max(out[,6])))
-matplot(t, out[,7], type = "l", ylab = "Coyotes", xlab = 'months', ylim=c(0, max(out[,7])))
+matplot(t, out[,2], type = "l", ylab = "Grass near water", xlab = 'years')
+matplot(t, out[,3], type = "l", ylab = "Grass not near water", xlab = 'years')
+matplot(t, out[,4], type = "l", ylab = "Cattle", xlab = 'years', ylim=c(0, max(out[,4])))
+matplot(t, out[,5], type = "l", ylab = "Bison", xlab = 'years', ylim=c(0, max(out[,5])))
+matplot(t, out[,6], type = "l", ylab = "Rabbits", xlab = 'years', ylim=c(0, max(out[,6])))
+matplot(t, out[,7], type = "l", ylab = "Coyotes", xlab = 'years', ylim=c(0, max(out[,7])))
 par(mfrow=c(1,1))
 
 
