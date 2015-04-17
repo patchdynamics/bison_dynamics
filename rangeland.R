@@ -34,6 +34,10 @@ library(deSolve)
 # eK = coyote biomass conversion efficiency
 # dnK = coyote death rate imposed by humans
 
+# Population Densities
+# Population densities for animals are in individuals per hectare
+# Densities for grasses are in grams biomass per hectare
+
 model = function(t, y, parms) {
   
   Gw = y[1]
@@ -47,18 +51,23 @@ model = function(t, y, parms) {
     
     GwT = Gw * w2t # Density of grasses near water scaled to total area
     GdT = Gd * ( 1 - w2t ) # Density of grasses not near water scaled to total area
+    GT = GwT + GdT # Total density of grass at scale of total area
     
-    dGw = Gw * ( rG * ( 1 - Gw / kG )  -  aC * C / w2t  -  tB * aB * B  -  aR * R )
+
+    dGw = Gw * ( rG * ( 1 - Gw / kG ))     - (aC * Gw / (bC + Gw)) * C / w2t    -  tB * aB * B    -  (aR * Gw / (bR + Gw)) * R
     
-    dGd = Gd * ( rG * ( 1 - Gd / kG ) -  (1 - tB) * aB * B - aR * R )
+    dGd = Gd * ( rG * ( 1 - Gd / kG ) )    - (1 - tB) * aB * B     -  (aR * Gw / (bR + Gw)) * R
     
-    dC  = eC * aC * C * GwT - dhC * C
+    dC  = (eC * (aC * Gw / (bC + Gw)) / Cw) * C   - dhC * C
     
-    dB  = rB * B - dhB * B
+    dB  = (eB * aB / Bw) * B   - dhB * B
     
-    dR  = eR * aR * ( GwT + GdT ) * R * (1 - R / kR) - ( (aK * R) / (bK + R) ) * K 
+    dR  = (eR * (aR * Gw / (bR + Gw)) / Rw) * R * (1 - R / kR)    - dnRI    - ( (aK * R) / (bK + R) ) * K 
+    dR = 0
+    # evidence is that jackrabbits are not actually limited by food
     
-    dK  = eK * ( (aK * R) / (bK + R) ) * K  - dnK * K
+    #dK  = eK * ( (aK * R) / (bK + R) ) * K  - dnK * K
+    dK = 0  # Coyotes held constant by management
     
     # [ (1 - tB) * Gd + tB * Gw ] 
     differentials = c(dGw, dGd, dC, dB, dR, dK)
@@ -67,21 +76,35 @@ model = function(t, y, parms) {
   })
 }
 
+kG = 2100 # carrying capcity density of grasses  kg / ha
 params = c(
-        rG = .9, 
-        w2t = .25,
-        aC = .01,  # from stocking rates whitepapers?
-        eC = .1,
-        dhC = .15,
-        kG = 10000,
-        aB = .01,  # unused
-        eB = .1,   # unused
-        rB = .018,  # intrinsic growth rate
-        dhB = .012, # culling rate, allowing some growth
-        tB = .2,  # this came from that paper
-        eR = .1,
-        aR = .01,
-        kR = 50,
+        Cw = 453, # avg weight of a cow
+        Bw = 680, # avg weight of a bison
+        Rw = 2, # avg weight of a rabbit
+  
+        rG = 12592.5, # intrinsic (max) growth rate of grasses  kg / year / ha
+        kG = kG, # carrying capcity density of grasses  kg / ha
+        
+        w2t = .25, # amount of area that is 'near water,' i.e. grazable by cattle
+        
+        aC = 4080,  # ideal kilos of grass per year per cattle 
+        bC = kG / 4, # density of grasses at half maximum consumption, value is a rough guess
+                     # consumption should saturate quickly
+        eC = .1, # median conversion efficiency
+        dhC = .15, # cattle harvest rate, percentage
+        
+        aB = 4080,  # ideal kilos of grass per year per mature bison 
+        eB = .04,   #  bison biomass conversion efficiency
+        #rB = .22,  # intrinsic growth rate, bison growth per year - individuals per year, not biomass.  equates to above values
+        dhB = .012, # culling rate, allowing some growth, a percentage
+        tB = .2,  # percentage time bison spend feeding near water, may be influenced by precipitation
+        
+        eR = .1, # current research suggests that grass availability is not the limiting factor on jackrabbit density
+        aR =  54.75, # kg forage pre year per rabbit
+        bR = kG / 4, # saturate forage rate quickly 
+        kR = 2,  # max jackrabbits per hectare
+        dnRI = 18.25, # density independent natural rabbit deaths - not including predation 
+        
         aK = 10,
         bK = 10,
         eK = .1,
@@ -90,10 +113,10 @@ params = c(
 
 Gw0 = 600
 Gd0 = 1000
-C0 = 15
-B0 = 2
-R0 = 10
-K0 = 40
+C0 = 0 #15
+B0 = 0 #2
+R0 = 0 #10
+K0 = 0 #40
   
 state = c(
           Gw0,
@@ -105,7 +128,9 @@ state = c(
         )
 
 
-t = 1:400  # months ??
+t = 1:30  # 30 years prediction
+#t = 1:200 # to get equilibria
+t = 1:10
 
 out = ode(y = state, times = t, func = model, parms = params)
 
