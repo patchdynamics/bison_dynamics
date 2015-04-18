@@ -53,11 +53,10 @@ model = function(t, y, parms) {
     GdT = Gd * ( 1 - w2t ) # Density of grasses not near water scaled to total area
     GT = GwT + GdT # Total density of grass at scale of total area
     
-    Gw_growth = Gw * ( rG * ( 1 - Gw / kG )) 
+    Gw_growth =  rG * ( 1 - Gw / kG ) 
     Gw_cattle_consumption =  (aC * Gw / (bC + Gw)) * C / w2t 
+    print(cat(Gw_growth, Gw_cattle_consumption))
     dGw =  Gw_growth  -  Gw_cattle_consumption -  tB * aB * B    -  (aR * Gw / (bR + Gw)) * R
-    
-    
     
     dGd = Gd * ( rG * ( 1 - Gd / kG ) )    - (1 - tB) * aB * B     -  (aR * Gw / (bR + Gw)) * R
     
@@ -84,7 +83,8 @@ params = c(
         Bw = 680, # avg weight of a bison
         Rw = 2, # avg weight of a rabbit
   
-        rG = 2000, #6000, # intrinsic (max) growth rate of grasses  kg / year / ha
+        #rG = 60, # kg / year / kg
+        rG = 8000, # intrinsic (max) growth rate of grasses  kg / year / ha
         kG = kG, # carrying capcity density of grasses  kg / ha
         
         w2t = .25, # amount of area that is 'near water,' i.e. grazable by cattle
@@ -93,7 +93,8 @@ params = c(
         bC = kG / 100, # density of grasses at half maximum consumption, value is a rough guess
                      # consumption should saturate quickly
         eC = .1, # median conversion efficiency
-        dhC = .5, # cattle harvest rate, percentage
+        sC = .2 # stocking rate for cattle.  cattle / ha.  determines rate of harvest
+        #dhC = .5, # cattle harvest rate, percentage
         
         aB = 4080,  # ideal kilos of grass per year per mature bison 
         eB = .04,   #  bison biomass conversion efficiency
@@ -113,9 +114,9 @@ params = c(
         dnK = .8
         )
 
-Gw0 = 600
+Gw0 = 2600
 Gd0 = 1000
-C0 = 10 #15
+C0 = .1 #15
 B0 = 0 #2
 R0 = 0 #2.7 #10
 K0 = .4 #40
@@ -132,7 +133,7 @@ state = c(
 
 t = 1:30  # 30 years prediction
 #t = 1:200 # to get equilibria
-t = 1:10
+t = 1:40
 
 out = ode(y = state, times = t, func = model, parms = params)
 
