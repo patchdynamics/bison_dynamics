@@ -55,21 +55,20 @@ model = function(t, y, parms) {
     
     Gw_growth =  rG * ( 1 - Gw / kG ) 
     Gw_cattle_consumption =  (aC * Gw / (bC + Gw)) * C / w2t 
-    print(cat(Gw_growth, Gw_cattle_consumption))
-    dGw =  Gw_growth  -  Gw_cattle_consumption -  tB * (aB * Gw/(bB * Gw)) * B    -  (aR * Gw / (bR + Gw)) * R
+    #print(cat(Gw_growth, Gw_cattle_consumption))
+    dGw =  Gw_growth  -  Gw_cattle_consumption -  tB * (aB * Gw/(bB + Gw)) * B    -  (aR * Gw / (bR + Gw)) * R
     
-    dGd =  rG * ( 1 - Gd / kG )    - (1 - tB) * aB * B     -  (aR * Gd / (bR + Gd)) * R
+    dGd =  rG * ( 1 - Gd / kG )    - (1 - tB) * (aB * Gd/(bB + Gd)) * B     -  (aR * Gd / (bR + Gd)) * R
     
     #dC  = (eC * (aC * Gw / (bC + Gw)) / Cw) * C   - dhC * C
     dC = 0 # stocking rate held constant by management
     
-    dB  = (eB * (aB * Gw / (bB * Gw)) / Bw) * B   - dhB * B
+    dB  =  eB * (tB * (aB * Gw/(bB + Gw)) * B) / Bw   +   ( eB * (1 - tB) * (aB * Gd/(bB + Gd)) * B ) / Bw   -  dhB * B
     
     dR  = (eR * (aR * Gw / (bR + Gw)) / Rw) * R * (1 - R / kR)    - dnR * R    - ( (aK * R) / (bK + R) ) * K 
     # evidence is that jackrabbits are not actually limited by food
     
-    deer = 1 # could be > 0, amount of fawns that coyote consume
-    dK  = eK * ( (aK * R) / (bK + R) ) * K  + deer - dnK * K
+    dK  = eK * ( (aK * R) / (bK + R) ) * K  + deer * K - dnK * K
     #dK = 0  # Coyotes held constant by management
     
     # [ (1 - tB) * Gd + tB * Gw ] 
@@ -89,7 +88,7 @@ params = c(
         rG = 6000, # intrinsic (max) growth rate of grasses  kg / year / ha
         kG = kG, # carrying capcity density of grasses  kg / ha
         
-        w2t = .5, # amount of area that is 'near water,' i.e. grazable by cattle
+        w2t = .5, # precentage of area that is 'near water,' i.e. grazable by cattle
         
         aC = 4080,  # ideal kilos of grass per year per cattle 
         bC = kG / 100, # density of grasses at half maximum consumption, value is a rough guess
@@ -112,15 +111,16 @@ params = c(
         
         aK = 20,
         bK = 5,
-        eK = .1
-        #dnK = .8 #coyote held constant by management
+        eK = .1,
+        deer = 0, # density of fawns consumed by coyote, can be managed by managing deer population
+        dnK = 1 #coyote held constant by management
         )
 
 Gw0 = 2100
 Gd0 = 1000
-C0 = .4 # consider this as stocking rate, held constant by management
-B0 = 2.4 # 2
-R0 = 2.7 # 10
+C0 = 0 # .4 #.4 # consider this as stocking rate, held constant by management
+B0 = 3 #.4 # 2
+R0 = 0 #2.7 # 10
 K0 = 3 #40
   
 state = c(
@@ -140,8 +140,8 @@ t = 1:40
 out = ode(y = state, times = t, func = model, parms = params)
 
 par(mfrow=c(3,2))
-matplot(t, out[,2], type = "l", ylab = "Grass near water", xlab = 'years')
-matplot(t, out[,3], type = "l", ylab = "Grass not near water", xlab = 'years')
+matplot(t, out[,2], type = "l", ylab = "Grass near water", xlab = 'years', ylim=c(0, 2400))
+matplot(t, out[,3], type = "l", ylab = "Grass not near water", xlab = 'years', ylim=c(0, 2400))
 matplot(t, out[,4], type = "l", ylab = "Cattle", xlab = 'years', ylim=c(0, max(out[,4])))
 matplot(t, out[,5], type = "l", ylab = "Bison", xlab = 'years', ylim=c(0, max(out[,5])))
 matplot(t, out[,6], type = "l", ylab = "Rabbits", xlab = 'years', ylim=c(0, max(out[,6])))
