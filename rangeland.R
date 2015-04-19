@@ -56,19 +56,21 @@ model = function(t, y, parms) {
     Gw_growth =  rG * ( 1 - Gw / kG ) 
     Gw_cattle_consumption =  (aC * Gw / (bC + Gw)) * C / w2t 
     print(cat(Gw_growth, Gw_cattle_consumption))
-    dGw =  Gw_growth  -  Gw_cattle_consumption -  tB * aB * B    -  (aR * Gw / (bR + Gw)) * R
+    dGw =  Gw_growth  -  Gw_cattle_consumption -  tB * (aB * Gw/(bB * Gw)) * B    -  (aR * Gw / (bR + Gw)) * R
     
-    dGd = Gd * ( rG * ( 1 - Gd / kG ) )    - (1 - tB) * aB * B     -  (aR * Gw / (bR + Gw)) * R
+    dGd =  rG * ( 1 - Gd / kG )    - (1 - tB) * aB * B     -  (aR * Gd / (bR + Gd)) * R
     
-    dC  = (eC * (aC * Gw / (bC + Gw)) / Cw) * C   - dhC * C
+    #dC  = (eC * (aC * Gw / (bC + Gw)) / Cw) * C   - dhC * C
+    dC = 0 # stocking rate held constant by management
     
-    dB  = (eB * aB / Bw) * B   - dhB * B
+    dB  = (eB * (aB * Gw / (bB * Gw)) / Bw) * B   - dhB * B
     
     dR  = (eR * (aR * Gw / (bR + Gw)) / Rw) * R * (1 - R / kR)    - dnR * R    - ( (aK * R) / (bK + R) ) * K 
     # evidence is that jackrabbits are not actually limited by food
     
-    #dK  = eK * ( (aK * R) / (bK + R) ) * K  - dnK * K
-    dK = 0  # Coyotes held constant by management
+    deer = 1 # could be > 0, amount of fawns that coyote consume
+    dK  = eK * ( (aK * R) / (bK + R) ) * K  + deer - dnK * K
+    #dK = 0  # Coyotes held constant by management
     
     # [ (1 - tB) * Gd + tB * Gw ] 
     differentials = c(dGw, dGd, dC, dB, dR, dK)
@@ -84,42 +86,42 @@ params = c(
         Rw = 2, # avg weight of a rabbit
   
         #rG = 60, # kg / year / kg
-        rG = 8000, # intrinsic (max) growth rate of grasses  kg / year / ha
+        rG = 6000, # intrinsic (max) growth rate of grasses  kg / year / ha
         kG = kG, # carrying capcity density of grasses  kg / ha
         
-        w2t = .25, # amount of area that is 'near water,' i.e. grazable by cattle
+        w2t = .5, # amount of area that is 'near water,' i.e. grazable by cattle
         
         aC = 4080,  # ideal kilos of grass per year per cattle 
         bC = kG / 100, # density of grasses at half maximum consumption, value is a rough guess
                      # consumption should saturate quickly
         eC = .1, # median conversion efficiency
-        sC = .2 # stocking rate for cattle.  cattle / ha.  determines rate of harvest
         #dhC = .5, # cattle harvest rate, percentage
         
         aB = 4080,  # ideal kilos of grass per year per mature bison 
+        bB = kG / 100, # consumption saturates quickly
         eB = .04,   #  bison biomass conversion efficiency
         #rB = .22,  # intrinsic growth rate, bison growth per year - individuals per year, not biomass.  equates to above values
-        dhB = .012, # culling rate, allowing some growth, a percentage
+        dhB = .01, # culling rate, allowing some growth, a percentage
         tB = .2,  # percentage time bison spend feeding near water, may be influenced by precipitation
         
         eR = .4, # this is tuned to allow one rabbit to create 8 rabbits a year, a conservative estimate
         aR =  54.75, # kg forage pre year per rabbit
         bR = kG / 100, # saturate forage rate quickly 
-        kR = 2.7,  # max jackrabbits per hectare
+        kR = 30,  # max jackrabbits per hectare  # they may not be limited actually
         dnR = 0.05, # natural rabbit death rate - not including predation 
         
-        aK = 10,
-        bK = 10,
-        eK = .1,
-        dnK = .8
+        aK = 20,
+        bK = 5,
+        eK = .1
+        #dnK = .8 #coyote held constant by management
         )
 
-Gw0 = 2600
+Gw0 = 2100
 Gd0 = 1000
-C0 = .1 #15
-B0 = 0 #2
-R0 = 0 #2.7 #10
-K0 = .4 #40
+C0 = .4 # consider this as stocking rate, held constant by management
+B0 = 2.4 # 2
+R0 = 2.7 # 10
+K0 = 3 #40
   
 state = c(
           Gw0,
