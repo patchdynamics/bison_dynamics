@@ -59,6 +59,9 @@ model = function(t, y, parms) {
     
     # aR here should be scaled to the relative size of the area
     # aR in the 25% area would be 25 percent of total aR, for instance
+    # again questioning if the handling of bison is also correct
+    # i think that the RATES need to be scaled to the proportion available.
+    # actually that is also weird because sure, rabbits could eat at their total rate near water
     dGw =  Gw_growth  -  Gw_cattle_consumption -  tB * (aB * Gw/(bB + Gw)) * B    -  (aR * Gw / (bR + Gw)) * R
     
     dGd =  rG * ( 1 - Gd / kG )    - (1 - tB) * (aB * Gd/(bB + Gd)) * B     -  (aR * Gd / (bR + Gd)) * R
@@ -79,7 +82,20 @@ model = function(t, y, parms) {
       
       #above is wrong because aR could be the maximum amount of COMBINED forage from BOTH pools
       #these rabbits are double eating!  they can't be allowed to reach aR in both pools, only the combined pool
-      dR  = (eR * (aR * GwT / (bR + GwT)) / Rw) * R * (1 - R / kR)    +   (eR * (aR * GdT / (bR + GdT)) / Rw) * R * (1 - R / kR)     - dnR * R    - ( (aK * R) / (bK + R) ) * K 
+      # maybe just averaging the pools would work ?  the main thing, is that here, they should be able to be achive aR twice
+      # aR is their total rate to be spread across BOTH pools
+      
+      # The below is true, but is it equiv to what we see in grass equations??
+      # only if aR in grass equations is scaled?
+      # i think that the aR, bR scaling strategy might be more correct than what I am doing below
+      #TotalGrassDensity = GwT + GdT
+      #R  = eR * R * aR * TotalGrassDensity / (bR + TotalGrassDensity) * (1 - R / kR)    -  dnR * R    -  ( (aK * R) / (bK + R) ) * K
+      
+      # can also be thought about as.. if rabbits get (aR * Gw / (bR + Gw)) density of biomass from Gw, what density of biomass do they get on the whole spatial scale.
+      # well, it's wtc of it.
+      RabbitUptakeRateFromGw = (aR * Gw / (bR + Gw)) * w2t  # need to verify these units -> it's a rate, which we then convert to per hectare for the entire space
+      RabbitUptakeRateFromGd = (aR * Gd / (bR + Gd)) * (1 - w2t)
+      dR  =  eR * RabbitUptakeRateFromGw * R * (1 - R / kR) / Rw    +   eR * RabbitUptakeRateFromGd  * R * (1 - R / kR) / Rw    - dnR * R    - ( (aK * R) / (bK + R) ) * K 
       
     }
     # evidence is that jackrabbits are not actually limited by food
@@ -290,13 +306,13 @@ params['fixed_grazing_pressure'] = 1
 out = ode(y = state, times = t, func = model, parms = params)
 system_plot(out)
 
-state = c( 1000, 1000, 1, 0, 4, 0)
-params['kR'] = 30
+state = c( 1000, 1000, 0, 0, 4, 3)
+params['kR'] = 50
 params['fixed_grazing_pressure'] = 0
-params['kG'] = 2100
+params['kG'] = 1500
 out = ode(y = state, times = t, func = model, parms = params)
 rabbit_coyote_plot(out)
-system_plot(out)
+#system_plot(out)
 
 
 # rabbit/coyote system 
@@ -308,9 +324,9 @@ state = c( 1000, 1000, 0, 0, 2, .1)
 #params['eR'] = .4 # bump up biomass conversion per year ?? for rabbits due to lots of babies
 #t = 1:50
 params['kR'] = 20
-params['dhK'] = .01
+params['dhK'] = .2
 params['aK'] = 200
-params['bK'] = 90
+params['bK'] = 30
 t = 1:50
 out = ode(y = state, times = t, func = model, parms = params)
 rabbit_coyote_plot(out)
