@@ -56,6 +56,9 @@ model = function(t, y, parms) {
     Gw_growth =  rG * ( 1 - Gw / kG ) 
     Gw_cattle_consumption =  (aC * Gw / (bC + Gw)) * C / w2t 
     #print(cat(Gw_growth, Gw_cattle_consumption))
+    
+    # aR here should be scaled to the relative size of the area
+    # aR in the 25% area would be 25 percent of total aR, for instance
     dGw =  Gw_growth  -  Gw_cattle_consumption -  tB * (aB * Gw/(bB + Gw)) * B    -  (aR * Gw / (bR + Gw)) * R
     
     dGd =  rG * ( 1 - Gd / kG )    - (1 - tB) * (aB * Gd/(bB + Gd)) * B     -  (aR * Gd / (bR + Gd)) * R
@@ -72,7 +75,12 @@ model = function(t, y, parms) {
     if( R < 0 ){
       dR = .001  # rescue the population
     } else {
+      #dR  = (eR * (aR * GwT / (bR + GwT)) / Rw) * R * (1 - R / kR)    +   (eR * (aR * GdT / (bR + GdT)) / Rw) * R * (1 - R / kR)     - dnR * R    - ( (aK * R) / (bK + R) ) * K 
+      
+      #above is wrong because aR could be the maximum amount of COMBINED forage from BOTH pools
+      #these rabbits are double eating!  they can't be allowed to reach aR in both pools, only the combined pool
       dR  = (eR * (aR * GwT / (bR + GwT)) / Rw) * R * (1 - R / kR)    +   (eR * (aR * GdT / (bR + GdT)) / Rw) * R * (1 - R / kR)     - dnR * R    - ( (aK * R) / (bK + R) ) * K 
+      
     }
     # evidence is that jackrabbits are not actually limited by food
     
