@@ -49,14 +49,9 @@ model = function(t, y, parms) {
   
   with(as.list(parms), {
     
-    GwT = Gw * w2t # Density of grasses near water scaled to total area
-    GdT = Gd * ( 1 - w2t ) # Density of grasses not near water scaled to total area
-    GT = GwT + GdT # Total density of grass at scale of total area
-    
     Gw_growth =  rG * ( 1 - Gw / kG ) 
-    Gw_cattle_consumption =  (aC * Gw / (bC + Gw)) * C / w2t 
-    #print(cat(Gw_growth, Gw_cattle_consumption))
-    9
+    Gw_cattle_consumption =  ((aC + aCE) * Gw / (bC + Gw)) * C / w2t 
+    
     # aR here should be scaled to the relative size of the area
     # aR in the 25% area would be 25 percent of total aR, for instance
     # again questioning if the handling of bison is also correct
@@ -79,12 +74,11 @@ model = function(t, y, parms) {
     # dB  =  eB * (tB * (aB * GwT/(bB + GwT)) * B) / Bw     +   ( eB * (1-tB) * (aB * GdT/(bB + GdT)) * B ) / Bw    -  dhB * B
     BisonUptakeRateFromGw = tB * (aB * Gw / (bB + Gw)) * w2t
     BisonUptakeRateFromGd = (1 + tB) * (aB * Gd / (bB + Gd)) * (1 - w2t)
-    print(BisonUptakeRateFromGd)
-    
+
     dB = eB * BisonUptakeRateFromGw * B / Bw    + eB * BisonUptakeRateFromGd * B / Bw     -  dhB * B
     
     if( R < 0 ){
-      dR = .001  # rescue the population
+      dR = .001  # rescue the population, so ode doesn't crash on divide by 0
     } else {
       #dR  = (eR * (aR * GwT / (bR + GwT)) / Rw) * R * (1 - R / kR)    +   (eR * (aR * GdT / (bR + GdT)) / Rw) * R * (1 - R / kR)     - dnR * R    - ( (aK * R) / (bK + R) ) * K 
       
@@ -108,9 +102,20 @@ model = function(t, y, parms) {
     }
     # evidence is that jackrabbits are not actually limited by food
     
+    # so, why are we dividing by Kw here?  Rabbits consumption is # of rabbits per coyote per year
+    # eK should be an efficienty of rabbit to coyote numericaly, there's no dividing by biomass
+    #dK  = eK * ( (aK * R) / (bK + R) ) * K   +  .001 * 30 * ( 1 - R / (bK + R) ) * K     - dhK * K
     
-    dK  = eK * ( (aK * R) / (bK + R) ) * K / Kw  + eK * ( 1 - (aK * R) / (bK + R) ) * deer * K / Kw - dhK * K
-    #dK = 0  # Coyotes held constant by management
+    dK  = eK * ( (aK * R) / (bK + R) ) * K   +   ( 1 - R / (bK + R) ) * deer     - dhK * K
+    
+    
+    
+    # eK should be adjusted...
+    print(.09 * ( 1 - R / (bK + R) )  )
+    
+    
+    
+    #dK  = eK * ( (aK * R) / (bK + R) ) * K     - dhK * K
     
     # [ (1 - tB) * Gd + tB * Gw ] 
     differentials = c(dGw, dGd, dC, dB, dR, dK)
@@ -135,7 +140,8 @@ params = c(
         w2t = .5, # precentage of area that is 'near water,' i.e. grazable by cattle
         
         aC = 4080,  # ideal kilos of grass per year per cattle 
-        bC = kG / 100, # density of grasses at half maximum consumption, value is a rough guess
+        aCE = 300,  # extra grass that cattle may eat beyond ideal
+        bC = kG / 150, # density of grasses at half maximum consumption, value is a rough guess
                      # consumption should saturate quickly
         eC = .1, # median conversion efficiency
         dhC = .5, # cattle harvest rate, percentage
@@ -156,8 +162,10 @@ params = c(
         
         aK = 20,  # jackrabbits per individual per year
         bK = 4,   # these numbers were adjusted to produce stable, expected dynamics
-        eK = .1, # trophic
-        deer = 0, # density of fawns consumed by coyote, can be managed by managing deer population
+        eK = .01, # trophic, number of rabbits to make a coyote 
+                  # (10% of rabbit biomass available to make full coyote biomass, 
+                  # figured using mass of each species)
+        deer = 0, # fixed availability of deer fawns for predation
         dhK = 1 #coyote control rate held constant by management
         )
 

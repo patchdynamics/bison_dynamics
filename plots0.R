@@ -161,9 +161,10 @@ state = c( 1000, 1000, 0, 0, 4, 3)
 params['kR'] = 50
 params['fixed_grazing_pressure'] = 0
 params['kG'] = 1500
-params['dhK'] = 0
+params['dhK'] = .2
 params['aK'] = 130
 params['bK'] = 30
+params['deer'] = .4
 out = ode(y = state, times = t, func = model, parms = params)
 rabbit_coyote_plot(out)
 
