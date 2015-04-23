@@ -73,7 +73,7 @@ model = function(t, y, parms) {
     # for bison it's the same, they may be hitting their max rate twice here
     # dB  =  eB * (tB * (aB * GwT/(bB + GwT)) * B) / Bw     +   ( eB * (1-tB) * (aB * GdT/(bB + GdT)) * B ) / Bw    -  dhB * B
     BisonUptakeRateFromGw = tB * (aB * Gw / (bB + Gw)) * w2t
-    BisonUptakeRateFromGd = (1 + tB) * (aB * Gd / (bB + Gd)) * (1 - w2t)
+    BisonUptakeRateFromGd = (1 - tB) * (aB * Gd / (bB + Gd)) * (1 - w2t)
 
     dB = eB * BisonUptakeRateFromGw * B / Bw    + eB * BisonUptakeRateFromGd * B / Bw     -  dhB * B
     
@@ -166,6 +166,8 @@ params = c(
                   # (10% of rabbit biomass available to make full coyote biomass, 
                   # figured using mass of each species)
         deer = 0, # fixed availability of deer fawns for predation
+                  # the units on this are a fixed amount of coyote biomass to possibly get from fawn biomass per hectare
+                  # this is not the actual of fawn biomass
         dhK = 1 #coyote control rate held constant by management
         )
 

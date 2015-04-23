@@ -24,7 +24,7 @@ rabbit_coyote_plot = function(out){
 state = c(1000, 1000, .4, .3, 0, 0)
 params['fixed_grazing_pressure'] = .5
 params['tB']  =.4
-params['dhB'] = .2
+params['dhB'] = .1
 params['dhC'] = .3
 out = ode(y = state, times = 1:50, func = model, parms = params)
 system_plot(out)
