@@ -131,10 +131,11 @@ system_plot = function(out) {
 
 rabbit_coyote_plot = function(out){
   par(mfrow=c(2,2))
-  matplot(t, out[,2], type = "l", ylab = "Grass near water", xlab = 'years', ylim=c(0, 2000))
-  matplot(t, out[,3], type = "l", ylab = "Grass not near water", xlab = 'years', ylim=c(0, 2000))
-  matplot(t, out[,6], type = "l", ylab = "Rabbits", xlab = 'years', ylim=c(0, max(out[,6])))
-  matplot(t, out[,7], type = "l", ylab = "Coyotes", xlab = 'years', ylim=c(0, max(out[,7])))
+  timesteps = nrow(out)
+  matplot(1:timesteps, out[,2], type = "l", ylab = "Grass near water", xlab = 'years', ylim=c(0, 2000))
+  matplot(1:timesteps, out[,3], type = "l", ylab = "Grass not near water", xlab = 'years', ylim=c(0, 2000))
+  matplot(1:timesteps, out[,6], type = "l", ylab = "Rabbits", xlab = 'years', ylim=c(0, max(out[,6])))
+  matplot(1:timesteps, out[,7], type = "l", ylab = "Coyotes", xlab = 'years', ylim=c(0, max(out[,7])))
   par(mfrow=c(1,1))
 }
 
@@ -148,25 +149,91 @@ system_plot(out)
 
 # rabbits and things
 state = c( 1000, 1000, .4, .4, 4, 0)
+
+state = c( 1000, 1000, 0, 0, 4, 0)  # just rabbits
 params['w2t'] = .5
 params['dhB'] = .22
 params['fixed_grazing_pressure'] = .4
 out = ode(y = state, times = t, func = model, parms = params)
 system_plot(out)
 
+# just rabbits
+# grasses = 830
+# rabbits = 50
+
 
 # rabbit/coyote system gives good dynamics
 # adjust dhK
-state = c( 1000, 1000, 0, 0, 4, 3)
+state = c( 1027, 1027, 0, 0, 35, 1.6)  # stable dynamics
+#state = c( 1027, 1027, 0, 0, 35, 8) # perturbation - lots of coyote
+#state = c( 1027, 1027, 0, 0, 35, 1.6) # perturbation - lots of rabbit
+state = c( 1500, 1500, 0, 0, 35, 1.6)  # stable dynamics
+#state = c( 1500, 1500, 0, 0, 1, 30)  # perturb
+
 params['kR'] = 50
 params['fixed_grazing_pressure'] = 0
+params['kG'] = 1500
+params['dhK'] = .27
+params['aK'] = 130  # adjusting this changes dynamics - if coyotes do or do not have other food?
+params['bK'] = 30   # dynamics are also very sensitive to this parameterization
+params['deer'] = 0
+params['eR'] = .5
+out = ode(y = state, times = 1:50, func = model, parms = params)
+rabbit_coyote_plot(out)
+
+
+rabbit_coyote_plot(out[10:50,])
+system_plot(out[10:50,])
+rabbit_coyote_out = out
+
+
+# perturbation - lots of rabbit, w. heavily controlled coyote
+state = c( 1027, 1027, 0, 0, 70, 1.6) # perturbation - lots of rabbit
+params['kR'] = 70 # perturbation - lots of rabbit
+params['kG'] = 1500
+params['dhK'] = .7
+params['aK'] = 130
+params['bK'] = 30
+params['deer'] = 0
+out = ode(y = state, times = 1:50, func = model, parms = params)
+rabbit_coyote_plot(out)
+high_control_perturbation = out
+
+# perturbation - lots of rabbit, w. uncontrolled coyote
+state = c( 1494, 1494, 0, 0, 70, 2) # perturbation - lots of rabbit
+params['kR'] = 70 # perturbation - lots of rabbit
 params['kG'] = 1500
 params['dhK'] = .2
 params['aK'] = 130
 params['bK'] = 30
-params['deer'] = .4
-out = ode(y = state, times = t, func = model, parms = params)
+params['deer'] = 0
+out = ode(y = state, times = 1:50, func = model, parms = params)
 rabbit_coyote_plot(out)
+low_control_perturbation = out
+
+perturbation_plot = function(high_control_perturbation, low_control_perturbation) {
+  time = 15
+  matplot(1:time, cbind(high_control_perturbation[1:time,6], low_control_perturbation[1:time,6]), type='l',
+          ylab = "Rabbit Density After Perturbation", xlab="Years")
+}
+perturbation_plot(high_control_perturbation, low_control_perturbation)
+
+
+
+
+grass_rabbit_coyote_control_plot = function(rabbit_coyote_out) {
+  par(mfrow=c(1,2))
+  col = c(6,2,1)
+  grass_data = cbind(rabbit_coyote_out[,2], 1027, 830)
+  matplot(rabbit_coyote_out[20:50,1], grass_data[20:50,], col=col, lty = 1, type = "l", ylab = "Cattle Range Grass Density", xlab = 'Years', ylim=c(0, 2000))
+  lagomorph_data = cbind(rabbit_coyote_out[,6], 35, 50)
+  matplot(rabbit_coyote_out[20:50,1], lagomorph_data[20:50,], col=col, lty = 1, type = "l", ylab = "Lagomorph Density", xlab = 'Years', ylim=c(0, 50))
+  
+  #plot(c(0,1), type='n', axes=F, xlab="", ylab="")
+  #legend("top", c("Coyotes Uncontrolled", "Coyotes Moderately Controlled", "Coyotes Completely Absent"))
+  par(mfrow=c(1,1))
+}
+grass_rabbit_coyote_control_plot(rabbit_coyote_out)
 
 
 # adjusting deer gives good dynamics here as well

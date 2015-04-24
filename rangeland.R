@@ -106,14 +106,7 @@ model = function(t, y, parms) {
     # eK should be an efficienty of rabbit to coyote numericaly, there's no dividing by biomass
     #dK  = eK * ( (aK * R) / (bK + R) ) * K   +  .001 * 30 * ( 1 - R / (bK + R) ) * K     - dhK * K
     
-    dK  = eK * ( (aK * R) / (bK + R) ) * K   +   ( 1 - R / (bK + R) ) * deer     - dhK * K
-    
-    
-    
-    # eK should be adjusted...
-    print(.09 * ( 1 - R / (bK + R) )  )
-    
-    
+    dK  = eK * ( (aK * R) / (bK + R) ) * K   +   ( 1 - R / (bK + R) ) * deer     - dhK * K    
     
     #dK  = eK * ( (aK * R) / (bK + R) ) * K     - dhK * K
     
